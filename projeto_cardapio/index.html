@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Cardápio</title>
+    <style>
+        /* (Opcional) CSS básico para ficar mais bonito */
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background-color: #f4f4f4;
+        }
+        #container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            box-sizing: border-box; /* Garante que o padding não quebre o layout */
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #resultado {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            white-space: pre-wrap; /* Preserva as quebras de linha da resposta */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <h2>Gerador de Cardápio com IA</h2>
+        <p>Quais ingredientes você tem na sua cozinha?</p>
+
+        <textarea id="ingredientes" rows="5" placeholder="Ex: ovos, farinha, leite, chocolate em pó"></textarea>
+
+        <button onclick="gerarCardapio()">Gerar Cardápio</button>
+
+        <h3>Sugestão da IA:</h3>
+        <div id="resultado">
+            Aguardando seus ingredientes...
+        </div>
+    </div>
+
+    <script>
+        async function gerarCardapio() {
+            const ingredientes = document.getElementById('ingredientes').value;
+            const resultadoDiv = document.getElementById('resultado');
+
+            resultadoDiv.innerText = "Pensando em uma receita...";
+
+            // 1. Criar o "prompt" específico para o cardápio
+            const promptParaAPI = `Crie uma receita simples usando apenas estes ingredientes: ${ingredientes}. Se não for possível, sugira uma receita que use a maioria deles.`;
+
+            try {
+                // 2. Chamar nossa API FastAPI (que está na porta 8001)
+                const response = await fetch('http://127.0.0.1:8001/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: promptParaAPI 
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erro ao chamar a API');
+                }
+
+                const data = await response.json();
+
+                // 3. Mostrar a resposta do Gemini
+                if (data.response) {
+                    resultadoDiv.innerText = data.response;
+                } else if (data.error) {
+                    resultadoDiv.innerText = `Erro: ${data.error}`;
+                }
+
+            } catch (error) {
+                console.error('Ocorreu um erro:', error);
+                resultadoDiv.innerText = 'Não foi possível conectar ao servidor. Verifique o console (F12) para ver o erro de CORS.';
+            }
+        }
+    </script>
+
+</body>
+</html>
