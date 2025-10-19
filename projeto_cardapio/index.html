@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Cardápio</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <style>
-        /* (Opcional) CSS básico para ficar mais bonito */
         body { 
             font-family: Arial, sans-serif; 
             margin: 20px; 
@@ -21,7 +23,7 @@
         }
         textarea {
             width: 100%;
-            box-sizing: border-box; /* Garante que o padding não quebre o layout */
+            box-sizing: border-box; 
             margin-bottom: 10px;
         }
         button {
@@ -35,8 +37,12 @@
             background-color: #e9f7ef;
             border: 1px solid #c3e6cb;
             border-radius: 4px;
-            white-space: pre-wrap; /* Preserva as quebras de linha da resposta */
+            /* O 'white-space: pre-wrap;' foi removido para o HTML funcionar */
         }
+        /* NOVO: Estilos para o HTML que será gerado pelo Markdown */
+        #resultado h1 { font-size: 1.5em; margin-top: 0; }
+        #resultado h2 { font-size: 1.2em; color: #333; }
+        #resultado ul, #resultado ol { padding-left: 20px; }
     </style>
 </head>
 <body>
@@ -44,9 +50,9 @@
     <div id="container">
         <h2>Gerador de Cardápio com IA</h2>
         <p>Quais ingredientes você tem na sua cozinha?</p>
-
+        
         <textarea id="ingredientes" rows="5" placeholder="Ex: ovos, farinha, leite, chocolate em pó"></textarea>
-
+        
         <button onclick="gerarCardapio()">Gerar Cardápio</button>
 
         <h3>Sugestão da IA:</h3>
@@ -60,10 +66,31 @@
             const ingredientes = document.getElementById('ingredientes').value;
             const resultadoDiv = document.getElementById('resultado');
 
-            resultadoDiv.innerText = "Pensando em uma receita...";
+            // NOVO: Usar innerHTML para que o HTML seja renderizado
+            resultadoDiv.innerHTML = "Pensando em uma receita...";
 
-            // 1. Criar o "prompt" específico para o cardápio
-            const promptParaAPI = `Crie uma receita simples usando apenas estes ingredientes: ${ingredientes}. Se não for possível, sugira uma receita que use a maioria deles.`;
+            // 1. NOVO: PROMPT OTIMIZADO
+            const promptParaAPI = `
+Você é um assistente de cozinha virtual.
+Sua tarefa é criar uma receita clara e deliciosa usando os ingredientes fornecidos.
+
+Ingredientes disponíveis: ${ingredientes}
+
+Por favor, forneça sua resposta EXATAMENTE no seguinte formato (use Markdown):
+
+# [Nome da Receita]
+
+## 🍽️ Ingredientes Necessários:
+- (Liste os ingredientes da receita, baseando-se nos que foram fornecidos.)
+- (Se precisar de algo básico como 'sal' ou 'água', pode adicionar.)
+
+## 👨‍🍳 Modo de Preparo:
+1. (Passo 1)
+2. (Passo 2)
+3. (etc...)
+
+**Notas Adicionais:** (Seja honesto. Se os ingredientes não combinarem bem ou se faltar algo crucial, mencione aqui. Se a receita for boa, dê uma dica de acompanhamento.)
+`;
 
             try {
                 // 2. Chamar nossa API FastAPI (que está na porta 8001)
@@ -82,17 +109,18 @@
                 }
 
                 const data = await response.json();
-
-                // 3. Mostrar a resposta do Gemini
+                
+                // 3. NOVO: Mostrar a resposta formatada
                 if (data.response) {
-                    resultadoDiv.innerText = data.response;
+                    // Aqui usamos o marked.parse() para converter o texto Markdown em HTML
+                    resultadoDiv.innerHTML = marked.parse(data.response);
                 } else if (data.error) {
-                    resultadoDiv.innerText = `Erro: ${data.error}`;
+                    resultadoDiv.innerText = `Erro: ${data.error}`; // Erros ainda como texto
                 }
 
             } catch (error) {
                 console.error('Ocorreu um erro:', error);
-                resultadoDiv.innerText = 'Não foi possível conectar ao servidor. Verifique o console (F12) para ver o erro de CORS.';
+                resultadoDiv.innerText = 'Não foi possível conectar ao servidor.';
             }
         }
     </script>
